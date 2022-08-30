@@ -1,0 +1,182 @@
+<?php
+
+use Drupal\Component\Utility\Html;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Markup;
+use Drupal\file\FileInterface;
+
+/**
+ * Implement of @see hook_page_attachments()
+ */
+function toolbar_custom_page_attachments(array &$attachments) {
+  // Unconditionally attach an asset to the page.
+  $attachments['#attached']['library'][] = 'toolbar_custom/toolbar_custom';
+  $config_factory = \Drupal::configFactory();
+  $config = $config_factory->getEditable('toolbar_custom.settings');
+  $style = "";
+  /** @var \Drupal\toolbar_menu\ToolbarMenuManager $toolbar_manager */
+  $toolbar_manager = \Drupal::service('toolbar_menu.manager');
+  foreach ($toolbar_manager->getToolbarMenuElements() as $element_id => $element) {
+    //$icon = $config->get("toolbar_menu_icons.{$element_id}.fa_icon");
+    $icon_unicode = $config->get("toolbar_menu_icons.{$element_id}.fa_icon_unicode");
+    if (!empty($icon_unicode)) {
+      $style .= ".toolbar-bar .toolbar-icon-toolbar-menu.toolbar-icon-toolbar-menu-{$element_id}:before { font-family: \"Font Awesome 5 Free\";font-size:1.2rem;content: \"\\{$icon_unicode}\" !important; }\n";
+      $style .= ".toolbar-bar .toolbar-icon-toolbar-menu.toolbar-icon-toolbar-menu-{$element_id}:before { background-image: none;line-height: 39px;text-indent: initial;text-align:center;}\n";
+      continue;
+    }
+    $fid = $config->get("toolbar_menu_icons.{$element_id}.file");
+    if(!empty($fid) && $file = Drupal::entityTypeManager()->getStorage('file')->load($fid)) {
+      /** @var Drupal\file\FileInterface $file */
+      $url = $file->createFileUrl();
+      $style .= ".toolbar-bar .toolbar-icon-toolbar-menu.toolbar-icon-toolbar-menu-{$element_id}:before { background-image: url({$url}); }\n";
+    }
+  }
+  if ($style) {
+    $attachments['#attached']['html_head'][] = [[
+      '#tag' => 'style',
+      '#value' => $style
+    ], 'toolbar_custom'];
+  }
+}
+
+/**
+ * Implements @see hook_form_FORM_ID_alter()
+ */
+function toolbar_custom_form_toolbar_menu_element_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  if (empty($form['id']['#default_value'])) {
+    return ;
+  }
+
+  $id = $form['id']['#default_value'];
+
+  $config_factory = \Drupal::configFactory();
+  $config = $config_factory->getEditable('toolbar_custom.settings');
+  $icon = $config->get("toolbar_menu_icons.{$id}.fa_icon");
+  $icon_unicode = $config->get("toolbar_menu_icons.{$id}.fa_icon_unicode");
+  $fid = $config->get("toolbar_menu_icons.{$id}.file");
+  $form['fa_icon'] = [
+    '#type'  => 'fieldset',
+    '#title' => t('FontAwesome Icon'),
+  ];
+
+  /*$form['fa_icon']['fa_icon'] = [
+    '#type'          => 'textfield',
+    '#title'         => t('Icon'),
+    '#default_value' => $icon,
+    '#attributes'    => [
+      'class' => [
+        'fa-menu-iconpicker',
+      ],
+    ],
+  ];
+  */
+  $form['fa_icon']['fa_icon_unicode'] = [
+    '#type'          => 'textfield',
+    '#title'         => t('Unicode'),
+    '#default_value' => $icon_unicode,
+    '#attributes'    => [
+      'class' => [
+        'fa-menu-iconpicker',
+      ],
+    ],
+  ];
+  $form['image'] = [
+    '#type'  => 'fieldset',
+    '#title' => t('Icon'),
+  ];
+  $form['image']['file'] = [
+    '#type'          => 'managed_file',
+    '#title'         => t('Image'),
+    '#default_value' => [$fid],
+    '#upload_location' => "public://toolbar_menu_icons",
+    '#upload_validators' => ["file_validate_extensions" => ["png jpg svg"]],
+  ];
+  $form['#attached']['library'][] = 'fontawesome_menu_icons/fontawesome-iconpicker';
+  $form['#attached']['library'][] = 'fontawesome_menu_icons/fontawesome-menu-icons';
+
+  $form['actions']['submit']['#submit'][] = 'toolbar_custom_form_submit';
+}
+
+/**
+ * Process the submitted form.
+ *
+ * @param array $form
+ *   Array Form.
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ *   Form Interface.
+ */
+function toolbar_custom_form_submit(array $form, FormStateInterface $form_state) {
+  $options = [];
+  $menu_link_id = $form_state->getValue('id');
+
+  $icon_field = $form_state->getValue('fa_icon');
+  $icon_unicode = $form_state->getValue('fa_icon_unicode');
+  $file_id = $form_state->getValue('file');
+
+  $options['fa_icon'] = !empty($icon_field) ? Html::escape($icon_field) : '';
+  $options['fa_icon_unicode'] = !empty($icon_unicode) ? Html::escape($icon_unicode) : '';
+  $options['file'] = !empty($file_id) ? reset($file_id) : NULL;
+  if(!empty($options['file'])) {
+    /** @var FileInterface $file */
+    $file = \Drupal::entityTypeManager()->getStorage('file')->load($options['file']);
+    if (!empty($file)) {
+      $file->setPermanent();
+      $file->save();
+      $file_usage = \Drupal::service('file.usage')->listUsage($file);
+      if (empty($file_usage)) {
+        \Drupal::service('file.usage')->add($file, 'toolbar_custom', $menu_link_id, $file->id());
+      }
+    }
+  }
+  else {
+    $select = \Drupal::database()->select('file_usage', 'fu')
+      ->fields('fu', ['fid'])
+      ->condition('module', 'toolbar_custom')
+      ->condition('type', $menu_link_id)
+      ->execute();
+    if (!empty($select)) {
+      foreach ($select as $item) {
+        $file = \Drupal::entityTypeManager()->getStorage('file')->load($item->id());
+        try {
+          $file->delete();
+        }
+        catch (Exception $ex) {}
+      }
+    }
+  }
+  if (!empty($menu_link_id)) {
+    $config_factory = \Drupal::configFactory();
+    $config = $config_factory->getEditable('toolbar_custom.settings');
+
+    $icons = $config->get('toolbar_menu_icons');
+    // Array key cannot contain dot in the config.
+    $config_key = str_replace('.', '_', $menu_link_id);
+    $icons[$config_key] = [
+      'fa_icon'       => $options['fa_icon'],
+      'file'     => $options['file'],
+      'fa_icon_unicode'        => $options['fa_icon_unicode']
+    ];
+
+    $config->set('toolbar_menu_icons', $icons);
+    $config->save();
+  }
+}
+
+/**
+ * Implements @see hook_toolbar_alter().
+ */
+function toolbar_custom_toolbar_alter(&$items) {
+  foreach($items as $key => $item) {
+    if (preg_match('/toolbar_menu_/', $key)) {
+      $id = str_replace('toolbar_menu_', '', $key);
+      $config_factory = \Drupal::configFactory();
+      $config = $config_factory->getEditable('toolbar_custom.settings');
+      $icon = $config->get("toolbar_menu_icons.{$id}.icon");
+      if($icon) {
+        $items[$key]['tab']['#attributes']['class'][] = 'fas';
+        $items[$key]['tab']['#attributes']['class'][] = $icon;
+        $items[$key]['tab']['#title'] = Markup::create();
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+<?php
+function toolbar_custom_install() {
+  module_set_weight('toolbar_custom', 999999);
+}

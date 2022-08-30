@@ -1,0 +1,6 @@
+toolbar_custom.settings:
+  type: config_object
+  label: 'Settings'
+  mapping:
+    toolbar_menu_icons:
+      type: mapping

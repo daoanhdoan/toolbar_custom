@@ -1,0 +1,7 @@
+a.toolbar-icon-toolbar-menu + div.toolbar-tray nav .toolbar-menu-administration > ul.toolbar-menu > li a {
+  padding-left: 1.333em;
+}
+
+a.toolbar-icon-toolbar-menu + div.toolbar-tray nav .toolbar-menu-administration > ul.toolbar-menu > li a i {
+  margin-right: 5px;
+}
