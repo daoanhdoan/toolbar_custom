@@ -87,7 +87,7 @@ function toolbar_custom_form_toolbar_menu_element_form_alter(&$form, \Drupal\Cor
   $form['image']['file'] = [
     '#type'          => 'managed_file',
     '#title'         => t('Image'),
-    '#default_value' => [$fid],
+    '#default_value' => !empty($fid) ? [$fid] : [],
     '#upload_location' => "public://toolbar_menu_icons",
     '#upload_validators' => ["file_validate_extensions" => ["png jpg svg"]],
   ];
