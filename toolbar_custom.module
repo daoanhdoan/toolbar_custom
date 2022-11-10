@@ -20,8 +20,8 @@ function toolbar_custom_page_attachments(array &$attachments) {
     //$icon = $config->get("toolbar_menu_icons.{$element_id}.fa_icon");
     $icon_unicode = $config->get("toolbar_menu_icons.{$element_id}.fa_icon_unicode");
     if (!empty($icon_unicode)) {
-      $style .= ".toolbar-bar .toolbar-icon-toolbar-menu.toolbar-icon-toolbar-menu-{$element_id}:before { font-family: \"Font Awesome 5 Free\";font-size:1.2rem;content: \"\\{$icon_unicode}\" !important; }\n";
-      $style .= ".toolbar-bar .toolbar-icon-toolbar-menu.toolbar-icon-toolbar-menu-{$element_id}:before { background-image: none;line-height: 39px;text-indent: initial;text-align:center;}\n";
+      $style .= ".toolbar-bar .toolbar-icon-toolbar-menu.toolbar-icon-toolbar-menu-{$element_id}:before { font-family: \"Font Awesome 5 Free\";content: \"\\{$icon_unicode}\" !important; }\n";
+      $style .= ".toolbar-bar .toolbar-icon-toolbar-menu.toolbar-icon-toolbar-menu-{$element_id}:before { background-image: none;text-indent: initial;text-align:center;}\n";
       continue;
     }
     $fid = $config->get("toolbar_menu_icons.{$element_id}.file");

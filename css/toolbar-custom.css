@@ -1,7 +1,23 @@
 a.toolbar-icon-toolbar-menu + div.toolbar-tray nav .toolbar-menu-administration > ul.toolbar-menu > li a {
   padding-left: 1.333em;
 }
-
 a.toolbar-icon-toolbar-menu + div.toolbar-tray nav .toolbar-menu-administration > ul.toolbar-menu > li a i {
   margin-right: 5px;
+}
+.toolbar .toolbar-bar .toolbar-tab .toolbar-icon:before {
+  font-size: 20px;
+  line-height: 34px;
+}
+.toolbar .toolbar-bar .toolbar-tab .toolbar-item { padding: 10px 18px 10px 40px !important }
+.toolbar .toolbar-bar .toolbar-tray a { padding: 10px 18px; }
+.toolbar .toolbar-bar a.toolbar-icon { padding-left: 40px; }
+.toolbar .toolbar-bar a.toolbar-icon:has(i) { padding-left: 10px; }
+.toolbar .toolbar-bar a.toolbar-icon i { margin-right: 10px; }
+
+div[id^="toolbar-item-toolbar-menu-"] a.toolbar-icon { padding-left: 15px !important; }
+
+.toolbar .toolbar-bar .toolbar-tab .toolbar-tray-horizontal ul li.menu-item--expanded .menu-item.hover-intent ul { display: block; margin: -34px 0 0 197px; }
+.toolbar .toolbar-bar .toolbar-tab .toolbar-tray-horizontal,
+.toolbar .toolbar-bar .toolbar-tab .toolbar-tray-vertical{
+  z-index: 99999;
 }
